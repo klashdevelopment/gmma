@@ -1,6 +1,6 @@
 # GMMA
 
-ill actually explain it later.
+GMMA is a modular music & video server with a complete and beautiful frontend. Host your own server, we'll handle the UI.
 
 
 ### Setup - backend
