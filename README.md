@@ -15,3 +15,7 @@ Clone the repo, and head into the gmma-backend folder. You'll want to host this 
 ***IMPORTANT:*** Install FFMPEG on your machine before hosting! This is required for videos, youtube downloading, and other crucial features.
 
 Start by editing the config.json.example (renaming it to config.json first). Add your Genius api stuff from [here](https://genius.com/api-clients) if you want external search (Search for pre-made songs instead of uploading your own).
+
+### Setup - frontend
+
+Visit our frontend and enter your server URL, or host your own via `npm start` in the `gmma` folder.
