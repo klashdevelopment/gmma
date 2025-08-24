@@ -28,6 +28,9 @@ jobs:
   # Build job
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./gmma
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,7 +63,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
-          cache: ${{ steps.detect-package-manager.outputs.manager }}
+          cache: 'npm'  # or 'yarn' depending on your manager
+          cache-dependency-path: './gmma/package-lock.json'  # or yarn.lock
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -78,12 +82,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd gmma
           ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
 
       - name: Build with Next.js
         run: |
-          cd gmma
           ${{ steps.detect-package-manager.outputs.runner }} next build
 
       - name: Upload artifact
