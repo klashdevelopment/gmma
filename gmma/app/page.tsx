@@ -25,7 +25,7 @@ export default function Home() {
     }, [server]);
 
     return (
-        <PageLayout music={{ music, setMusic }}>
+        <PageLayout>
             {/* <div className="song-grid">
                 {music.map((song) => (
                     <div key={song.uuid} className="song" onClick={() => {
