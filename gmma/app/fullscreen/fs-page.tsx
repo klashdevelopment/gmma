@@ -4,9 +4,10 @@ import { Button } from "@mui/joy";
 import { usePlaying } from "../hooks/usePlaying";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LyricFetch, PlainLyrics, RichSyncLyrics, SyncedLyrics } from "../lyrics/page";
+import { RichSyncLyrics, SyncedLyrics } from "../lyrics/types";
 import useServer from "../hooks/useServer";
 import { getCommonColors, makeNotTooBright } from "../util/ImageUtility";
+import { LyricFetch } from "../lyrics/page";
 
 export default function FullscreenPage() {
     const playing = usePlaying();

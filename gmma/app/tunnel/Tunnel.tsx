@@ -6,7 +6,8 @@ import { usePlaying } from "../hooks/usePlaying";
 import useServer from "../hooks/useServer";
 import { Button } from "@mui/joy";
 import "./tunnel.css";
-import { LyricFetch, RichSyncLyrics, SyncedLyrics } from "../lyrics/page";
+import { LyricFetch } from "../lyrics/page";
+import { RichSyncLyrics, SyncedLyrics } from "../lyrics/types";
 
 export default function Tunnel() {
     const playing = usePlaying();
