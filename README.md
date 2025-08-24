@@ -2,6 +2,8 @@
 
 GMMA is a modular music & video server with a complete and beautiful frontend. Host your own server, we'll handle the UI.
 
+![Demo Video]()
+
 <img width="3840" height="1987" alt="image" src="https://github.com/user-attachments/assets/d885e884-df06-4b8f-a9a4-c23572004952" />
 
 <img width="2277" height="1226" alt="image" src="https://github.com/user-attachments/assets/374c5a52-5413-4392-84da-cc2b9a251403" />

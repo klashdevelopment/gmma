@@ -13,6 +13,7 @@ export default function Setup() {
             <div className="setup-container" style={{ textAlign: 'center' }}>
                 <h1>Welcome to GMMA</h1>
                 <p>It seems like it's your first time (on this device). Enter your GMMA server.</p>
+                <p>Demo server: <code>https://gmma-demo-backend.fly.dev/</code></p>
                 <Input placeholder="Enter server URL" onChange={(e) => {
                     setServerInp(e.target.value);
                 }} />
