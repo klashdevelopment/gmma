@@ -8,3 +8,9 @@ logs
 **/.next
 **/out
 **/build
+
+gmma-backend/music/**
+gmma-backend/playlists/**
+gmma-backend/temp_uploads/**
+gmma-backend/downloads/**
+gmma-backend/videos/**
