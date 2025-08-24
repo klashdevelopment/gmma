@@ -1,0 +1,8 @@
+{
+    "genius": {
+        "client_id": "",
+        "client_secret": "",
+        "access_token": ""
+    },
+    "allow_edits": true
+}

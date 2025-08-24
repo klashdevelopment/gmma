@@ -1,0 +1,283 @@
+"use client";
+import { useRouter } from "next/navigation";
+import useServer from "../hooks/useServer";
+import { CSSProperties, useEffect, useRef, useState } from "react";
+import PageLayout from "../components/Layout";
+import { PlayingContextType, usePlaying } from "../hooks/usePlaying";
+import { Button, Tooltip } from "@mui/joy";
+import { getCommonColors, makeNotTooBright } from "../util/ImageUtility";
+
+export interface RichSyncLitem {
+    c: string;
+    o: number;
+}
+export interface RichSyncItem {
+    ts: number;
+    te: number;
+    l: RichSyncLitem[];
+    x: string;
+}
+// example item:
+// {\"ts\":0.09,\"te\":2.05,\"l\":[{\"c\":\"(\",\"o\":0},{\"c\":\"'Til\",\"o\":0.011},{\"c\":\" \",\"o\":0.101},{\"c\":\"I'm\",\"o\":0.431},{\"c\":\" \",\"o\":0.575},{\"c\":\"in\",\"o\":0.862},{\"c\":\" \",\"o\":0.938},{\"c\":\"the\",\"o\":1.161},{\"c\":\" \",\"o\":1.26},{\"c\":\"grave)\",\"o\":1.526}],\"x\":\"('Til I'm in the grave)\"}
+export interface LyricFetch { source: { plain?: string, synced?: string, richsync?: string }, plain?: string, synced?: string, richsync?: RichSyncItem[] };
+
+export function PlainLyrics({ lyrics }: { lyrics: LyricFetch | null }) {
+    return (
+        <>
+            {lyrics?.plain?.split('\n').map((line, index) => (
+                <p key={index} style={{ margin: '0.5rem 0', textAlign: 'center' }}>
+                    {line}
+                </p>
+            ))}
+        </>
+    )
+}
+
+export interface LyricElementProps { lyrics: LyricFetch | null, playing: PlayingContextType, style?: CSSProperties, transformOrigin?: string, p_style?: CSSProperties, onlyCurrentLine?: boolean }
+
+export function SyncedLyrics({ lyrics, playing, style = {}, p_style = {}, transformOrigin = "center", onlyCurrentLine = false }: LyricElementProps) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [lastActiveLine, setLastActiveLine] = useState(-1);
+
+    useEffect(() => {
+        if (!lyrics?.synced) return;
+
+        const lines = lyrics.synced.split('\n');
+        let activeIndex = -1;
+
+        for (let i = lines.length - 1; i >= 0; i--) {
+            const match = lines[i].match(/^\[(\d+):(\d+\.\d+)\]/);
+            if (match) {
+                const minutes = parseInt(match[1], 10);
+                const seconds = parseFloat(match[2]);
+                if (playing.currentTime >= minutes * 60 + seconds) {
+                    activeIndex = i;
+                    break;
+                }
+            }
+        }
+
+        if (activeIndex !== lastActiveLine) {
+            setLastActiveLine(activeIndex);
+            const element = containerRef.current?.children[activeIndex];
+            element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, [playing.currentTime, lyrics?.synced]);
+
+    return (
+        <div ref={containerRef} style={{ whiteSpace: 'pre-wrap', textAlign: 'center', fontWeight: 600, ...style }}>
+            {lyrics?.synced?.split('\n').map((line, index, arr) => {
+                const match = line.match(/^\[(\d+):(\d+\.\d+)\]\s*(.*)$/);
+                if (!match) return null;
+                const minutes = parseInt(match[1], 10);
+                const seconds = parseFloat(match[2]);
+                const text = match[3];
+                const timeInSeconds = minutes * 60 + seconds;
+                const isActive = playing.currentTime >= timeInSeconds;
+                if (onlyCurrentLine) {
+                    // Find the last active line
+                    let activeIndex = -1;
+                    for (let i = arr.length - 1; i >= 0; i--) {
+                        const m = arr[i].match(/^\[(\d+):(\d+\.\d+)\]/);
+                        if (m) {
+                            const min = parseInt(m[1], 10);
+                            const sec = parseFloat(m[2]);
+                            if (playing.currentTime >= min * 60 + sec) {
+                                activeIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                    if (index !== activeIndex) return null;
+                }
+                return (
+                    <p key={index} style={{
+                        margin: '0.5rem 0',
+                        opacity: isActive ? 1 : 0.5,
+                        transform: `scale(${isActive ? 1 : 0.9})`,
+                        transformOrigin: transformOrigin,
+                        transition: 'all 0.4s ease',
+                        cursor: 'pointer',
+                        ...p_style
+                    }} onClick={() => {
+                        if (containerRef.current) {
+                            const element = containerRef.current.children[index];
+                            if (element) {
+                                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }
+                        }
+                        playing.setTimeTo(timeInSeconds);
+                    }}>
+                        {text || '♫'}
+                    </p>
+                );
+            })}
+        </div>
+    );
+}
+
+export function RichSyncLyrics({ lyrics, playing, style = {}, p_style = {}, transformOrigin = "center", onlyCurrentLine = false }: LyricElementProps) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [lastActiveLine, setLastActiveLine] = useState(-1);
+
+    useEffect(() => {
+        if (!lyrics?.richsync) return;
+
+        let activeIndex = -1;
+        for (let i = lyrics.richsync.length - 1; i >= 0; i--) {
+            const item = lyrics.richsync[i];
+            if (playing.currentTime >= item.ts) {
+                activeIndex = i;
+                break;
+            }
+        }
+
+        if (activeIndex !== lastActiveLine) {
+            setLastActiveLine(activeIndex);
+            const element = containerRef.current?.children[activeIndex];
+            element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, [playing.currentTime, lyrics?.richsync]);
+
+    return (
+        <div ref={containerRef} style={{ whiteSpace: 'pre-wrap', textAlign: 'center', fontWeight: 600, ...style }}>
+            {lyrics?.richsync?.map((item, index, arr) => {
+                // Find the last active line if onlyCurrentLine is true
+                let activeIndex = -1;
+                if (onlyCurrentLine) {
+                    for (let i = arr.length - 1; i >= 0; i--) {
+                        if (playing.currentTime >= arr[i].ts) {
+                            activeIndex = i;
+                            break;
+                        }
+                    }
+                    if (index !== activeIndex) return null;
+                }
+                const isActive = playing.currentTime >= item.ts;
+                return (
+                    <p key={index} style={{
+                        margin: '0.5rem 0',
+                        opacity: isActive ? 1 : 0.5,
+                        transform: `scale(${isActive ? 1 : 0.9})`,
+                        transformOrigin,
+                        transition: 'all 0.4s ease',
+                        cursor: 'pointer',
+                        ...p_style
+                    }}>
+                        {item.l.map((letter, letterIndex) => (
+                            <span key={letterIndex} style={{
+                                opacity: playing.currentTime >= (item.ts + letter.o) ? 1 : 0.3,
+                                transition: 'opacity 0.2s ease'
+                            }} onClick={() => {
+                                playing.setTimeTo(item.ts + letter.o);
+                                if (containerRef.current?.children[index]) {
+                                    containerRef.current.children[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+                            }}>
+                                {letter.c}
+                            </span>
+                        ))}
+                    </p>
+                );
+            })}
+        </div>
+    );
+}
+
+export default function LyricsPage() {
+    const [server, setServer] = useServer();
+    const router = useRouter();
+    const [music, setMusic] = useState<GmmaSong[]>([]);
+    const playing = usePlaying();
+
+    const [lyrics, setLyrics] = useState<LyricFetch | null>(null);
+    const [type, setType] = useState<'synced' | 'plain' | 'richsync' | 'unset'>('unset');
+
+    const [color, setColor] = useState<string>('transparent');
+
+    const [loading, setLoading] = useState(false);
+
+    function fetchLyrics() {
+        if (playing.song) {
+            if (playing.song.artwork) {
+                getCommonColors(`${server}${playing.song.artwork}`, 0.5).then(col => {
+                    if (col.length > 0) {
+                        setColor(makeNotTooBright(col[0]));
+                    }
+                });
+            }
+
+            var keep = true;
+            setLoading(true);
+            fetch(`${server}/lyrics/${playing.song.uuid}`)
+                .then((res) => {
+                    if (!res.ok) {
+                        if (res.status === 404) {
+                            console.log("No lyrics found for this song.");
+                            setLyrics(null);
+                            keep = false;
+                            return;
+                        }
+                        throw new Error(`Failed to fetch lyrics: ${res.statusText}`);
+                    }
+                    return res.json();
+                })
+                .then((data) => {
+                    if (!keep) return;
+                    setLyrics(data || null);
+                    if (type === 'unset' || !data[type]) {
+                        if (data.richsync) {
+                            setType('richsync');
+                        } else if (data.synced) {
+                            setType('synced');
+                        } else if (data.plain) {
+                            setType('plain');
+                        }
+                    }
+                })
+                .catch((err) => {
+                    setLyrics(null);
+                })
+                .finally(() => {
+                    setLoading(false);
+                });
+        } else {
+            setLyrics(null);
+        }
+    }
+
+    useEffect(() => {
+        fetchLyrics();
+    }, [playing.song]);
+
+    return (
+        <PageLayout>
+            <div style={{ display: 'flex', flexDirection: 'column', overflowY: 'hidden', width: '100%', height: '100%', background: `${color}` }}>
+                <div style={{ width: 'calc(100% - 8px)', height: '40px', display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'center', padding: '4px', backgroundColor: '#ffffff05', borderBottom: '1px solid #ffffff30', color: '#fff' }}>
+                    <Button variant="soft" color={'neutral'} onClick={() => { router.back() }}><i className="fas fa-arrow-left" /></Button>
+                    {lyrics?.synced && <Tooltip variant="soft" title={lyrics?.source['synced']}><Button variant={type === 'synced' ? 'solid' : 'soft'} startDecorator={<i className="fas fa-microphone-stand" />} onClick={() => { setType('synced') }}>Synced</Button></Tooltip>}
+                    {lyrics?.plain && <Tooltip variant="soft" title={lyrics?.source['plain']}><Button variant={type === 'plain' ? 'solid' : 'soft'} startDecorator={<i className="fas fa-headphones" />} onClick={() => { setType('plain') }}>Plain</Button></Tooltip>}
+                    {lyrics?.richsync && <Tooltip variant="soft" title={lyrics?.source['richsync']}><Button variant={type === 'richsync' ? 'solid' : 'soft'} startDecorator={<i className="fas fa-brain" />} onClick={() => { setType('richsync') }}>RichSync</Button></Tooltip>}
+                    <Button variant="soft" disabled={loading} color={'neutral'} onClick={() => { fetchLyrics() }}><i className="fas fa-refresh" /></Button>
+                </div>
+                <div className="lyrics-container" style={{ width: 'calc(100% - 80px)', height: 'calc(100% - 120px)', padding: '40px', fontSize: '3vw', fontWeight: '600', overflowY: 'auto', wordWrap: 'normal', scrollbarColor: '#ccc #1a1a1b', scrollbarWidth: 'thin' }}>
+                    {loading ? <p style={{ textAlign: 'center' }}>Loading lyrics...</p> : (type === 'synced' && lyrics?.synced) ? <SyncedLyrics playing={playing} lyrics={lyrics} /> : (
+                        (type === 'plain' && lyrics?.plain) ? (
+                            <PlainLyrics lyrics={lyrics} />
+                        ) : (
+                            (type === 'richsync' && lyrics?.richsync) ? (
+                                <RichSyncLyrics playing={playing} lyrics={lyrics} />
+                            ) : (
+                                <p style={{ textAlign: 'center' }}>
+                                    {playing.song ? <>
+                                        <span>No lyrics found</span>
+                                    </> : "No song playing"}
+                                </p>
+                            )
+                        )
+                    )}
+                </div>
+            </div>
+        </PageLayout>
+    );
+}
