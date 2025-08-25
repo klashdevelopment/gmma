@@ -168,7 +168,9 @@ app.delete('/delete/:uuid', (req, res) => {
 
 const possibleFormats = [
     'mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac', 'wma',
-    'webm', 'opus', 'aiff', 'au', 'ra', '3gp', 'amr'
+    'webm', 'opus', 'aiff', 'au', 'ra', '3gp', 'amr',
+    'mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv',
+    'mpg', 'mpeg', 'm4v'
 ];
 
 async function loadSong(uuid, { includeHasMusic = false, includeMusicExtension = false } = {}) {
